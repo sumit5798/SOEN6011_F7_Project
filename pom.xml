@@ -39,19 +39,6 @@
 
   <build>
     <plugins>
-      <!-- Semantic Versioning from Git tags, e.g., v1.2.3 -->
-      <plugin>
-        <groupId>fr.brouillard.oss</groupId>
-        <artifactId>jgitver-maven-plugin</artifactId>
-        <version>1.0.0</version>
-        <extensions>true</extensions>
-        <configuration>
-          <strategy>CONFIGURABLE</strategy>
-          <autoIncrementPatch>true</autoIncrementPatch>
-          <useDirty>true</useDirty>
-          <regexVersionTag>v(?&lt;major&gt;\d+)\.(?&lt;minor&gt;\d+)\.(?&lt;patch&gt;\d+)</regexVersionTag>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
