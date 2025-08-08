@@ -24,16 +24,7 @@ This project implements a **Power Calculator (x^y)** with a graphical user inter
 
 ## 📁 Project Structure
 
-SOEN6011_F7_Project/
-├── src/
-│ ├── main/java/com/example/
-│ │ ├── PowerCalculator.java # Core mathematical implementation
-│ │ └── PowerCalculatorGUI.java # GUI application
-│ └── test/java/com/example/
-│ └── PowerCalculatorTest.java # Test suite
-├── pom.xml # Maven configuration
-├── google_checks.xml # Checkstyle configuration
-└── README.md # This file
+![Project Structure](images/proj.png)
 
 This comprehensive README.md includes:
 
