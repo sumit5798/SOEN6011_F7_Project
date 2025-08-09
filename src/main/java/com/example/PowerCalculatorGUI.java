@@ -12,6 +12,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 import javax.swing.BorderFactory;
+import javax.swing.AbstractAction;
+import javax.swing.JComponent;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -21,6 +23,11 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.KeyStroke;
+import javax.swing.border.Border;
+import javax.swing.border.LineBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 /**
  * GUI for the x^y Power Calculator
@@ -34,6 +41,7 @@ public class PowerCalculatorGUI extends JFrame {
     private JLabel errorLabel;
     private JButton calculateButton;
     private JButton clearButton;
+    private Border defaultTextFieldBorder;
 
     public PowerCalculatorGUI() {
         initializeGUI();
@@ -48,7 +56,7 @@ public class PowerCalculatorGUI extends JFrame {
         setSize(500, 350);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null); // Center the window
-        setResizable(false);
+        setResizable(true);
 
         // Set up the main panel with a more sophisticated layout
         JPanel mainPanel = new JPanel();
@@ -73,6 +81,11 @@ public class PowerCalculatorGUI extends JFrame {
         baseField = new JTextField(15);
         baseField.setFont(new Font("Monospaced", Font.PLAIN, 14));
         baseField.setToolTipText("Enter the base value (any real number)");
+        baseLabel.setLabelFor(baseField);
+        baseLabel.setDisplayedMnemonic(KeyEvent.VK_B);
+        baseField.getAccessibleContext().setAccessibleName("Base input field");
+        baseField.getAccessibleContext().setAccessibleDescription(
+                "Enter the base value x for the power calculation");
 
         // Exponent input
         JLabel exponentLabel = new JLabel("Exponent (y):");
@@ -80,6 +93,11 @@ public class PowerCalculatorGUI extends JFrame {
         exponentField = new JTextField(15);
         exponentField.setFont(new Font("Monospaced", Font.PLAIN, 14));
         exponentField.setToolTipText("Enter the exponent value (any real number)");
+        exponentLabel.setLabelFor(exponentField);
+        exponentLabel.setDisplayedMnemonic(KeyEvent.VK_E);
+        exponentField.getAccessibleContext().setAccessibleName("Exponent input field");
+        exponentField.getAccessibleContext().setAccessibleDescription(
+                "Enter the exponent value y for the power calculation");
 
         inputPanel.add(baseLabel);
         inputPanel.add(baseField);
@@ -98,10 +116,18 @@ public class PowerCalculatorGUI extends JFrame {
         calculateButton.setOpaque(true);
         calculateButton.setContentAreaFilled(true);
         calculateButton.setBorderPainted(false);
+        calculateButton.setMnemonic(KeyEvent.VK_C);
+        calculateButton.getAccessibleContext().setAccessibleName("Calculate button");
+        calculateButton.getAccessibleContext().setAccessibleDescription(
+                "Compute x raised to the power y using the entered values");
 
         clearButton = new JButton("Clear");
         clearButton.setFont(new Font("SansSerif", Font.PLAIN, 14));
         clearButton.setPreferredSize(new Dimension(100, 35));
+        clearButton.setMnemonic(KeyEvent.VK_L);
+        clearButton.getAccessibleContext().setAccessibleName("Clear inputs button");
+        clearButton.getAccessibleContext().setAccessibleDescription(
+                "Clear all inputs and results and focus the base field");
 
         buttonPanel.add(calculateButton);
         buttonPanel.add(clearButton);
@@ -115,6 +141,9 @@ public class PowerCalculatorGUI extends JFrame {
         resultLabel.setFont(new Font("Monospaced", Font.BOLD, 16));
         resultLabel.setHorizontalAlignment(SwingConstants.CENTER);
         resultLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        resultLabel.getAccessibleContext().setAccessibleName("Result label");
+        resultLabel.getAccessibleContext().setAccessibleDescription(
+                "Displays the result of the power calculation or a status message");
 
         // Error message display
         errorLabel = new JLabel("");
@@ -122,14 +151,15 @@ public class PowerCalculatorGUI extends JFrame {
         errorLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
         errorLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        errorLabel.getAccessibleContext().setAccessibleName("Error message label");
+        errorLabel.getAccessibleContext().setAccessibleDescription(
+                "Displays input validation errors and helpful guidance");
 
         resultPanel.add(resultLabel, BorderLayout.CENTER);
         resultPanel.add(errorLabel, BorderLayout.SOUTH);
 
-        // Add all panels to main panel
+        // Add panels to main panel
         mainPanel.add(titlePanel, BorderLayout.NORTH);
-        mainPanel.add(inputPanel, BorderLayout.CENTER);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         // Create a combined panel for input and result
         JPanel centerPanel = new JPanel(new BorderLayout());
@@ -140,6 +170,20 @@ public class PowerCalculatorGUI extends JFrame {
         mainPanel.add(centerPanel, BorderLayout.CENTER);
 
         add(mainPanel);
+
+        // Set default button for Enter key and bind ESC to clear
+        getRootPane().setDefaultButton(calculateButton);
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "clearFields");
+        getRootPane().getActionMap().put("clearFields", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                clearFields();
+            }
+        });
+
+        // Keep default border to restore during validation
+        defaultTextFieldBorder = baseField.getBorder();
     }
 
     /**
@@ -184,6 +228,30 @@ public class PowerCalculatorGUI extends JFrame {
 
         baseField.addKeyListener(enterKeyListener);
         exponentField.addKeyListener(enterKeyListener);
+
+        // Real-time validation to prevent errors and provide feedback
+        DocumentListener validationListener = new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                updateValidationState();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                updateValidationState();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                updateValidationState();
+            }
+        };
+
+        baseField.getDocument().addDocumentListener(validationListener);
+        exponentField.getDocument().addDocumentListener(validationListener);
+
+        // Initial validation state
+        updateValidationState();
     }
 
     /**
@@ -284,6 +352,72 @@ public class PowerCalculatorGUI extends JFrame {
         resultLabel.setText("Result: (Enter values and click Calculate)");
         errorLabel.setText("");
         baseField.requestFocus(); // Set focus back to base field
+        // Restore borders
+        baseField.setBorder(defaultTextFieldBorder);
+        exponentField.setBorder(defaultTextFieldBorder);
+        calculateButton.setEnabled(false);
+    }
+
+    /**
+     * Validate inputs in real time to prevent common errors and reduce memory load.
+     * Enables/disables calculate button and sets helpful error messages.
+     */
+    private void updateValidationState() {
+        String baseText = baseField.getText().trim();
+        String exponentText = exponentField.getText().trim();
+
+        errorLabel.setText("");
+        baseField.setBorder(defaultTextFieldBorder);
+        exponentField.setBorder(defaultTextFieldBorder);
+
+        if (baseText.isEmpty() || exponentText.isEmpty()) {
+            calculateButton.setEnabled(false);
+            return;
+        }
+
+        Double x = tryParseDouble(baseText);
+        Double y = tryParseDouble(exponentText);
+
+        if (x == null || y == null) {
+            errorLabel.setText("Please enter valid numeric values for x and y.");
+            if (x == null) {
+                baseField.setBorder(new LineBorder(Color.RED));
+            }
+            if (y == null) {
+                exponentField.setBorder(new LineBorder(Color.RED));
+            }
+            calculateButton.setEnabled(false);
+            return;
+        }
+
+        // Prevent known invalid cases before calculation for better UX
+        if (x == 0.0 && y < 0.0) {
+            errorLabel.setText("0 raised to a negative power is undefined.");
+            exponentField.setBorder(new LineBorder(Color.RED));
+            calculateButton.setEnabled(false);
+            return;
+        }
+
+        if (x < 0.0 && !isInteger(y)) {
+            errorLabel.setText("Negative base requires an integer exponent.");
+            exponentField.setBorder(new LineBorder(Color.RED));
+            calculateButton.setEnabled(false);
+            return;
+        }
+
+        calculateButton.setEnabled(true);
+    }
+
+    private static Double tryParseDouble(String value) {
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private static boolean isInteger(double value) {
+        return value == Math.floor(value) && !Double.isInfinite(value);
     }
 
     /**

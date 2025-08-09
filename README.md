@@ -79,7 +79,7 @@ The README now serves as a complete guide for understanding, setting up, and usi
 
 3. **Run the GUI application**
    ```bash
-   mvn exec:java -Dexec.mainClass="com.example.PowerCalculatorGUI"
+   mvn exec:java '-Dexec.mainClass=com.example.PowerCalculatorGUI'
    ```
 
 ## 🧪 Testing
